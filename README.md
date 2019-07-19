@@ -1,6 +1,6 @@
 # GoFig
 
-![](gofig.png =250x)
+<img src="gofig.png" alt="gofig mascot" width="200"/>
 
 Easy config parsing for server applications.
 
