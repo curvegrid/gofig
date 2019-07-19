@@ -1,6 +1,6 @@
 # GoFig
 
-![](gofig.png)
+![](gofig.png =250x)
 
 Easy config parsing for server applications.
 
