@@ -1,5 +1,7 @@
 # GoFig
 
+![](gofig.png)
+
 Easy config parsing for server applications.
 
 ## Features
