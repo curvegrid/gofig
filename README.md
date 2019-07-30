@@ -1,5 +1,7 @@
 # GoFig
 
+<img src="gofig.png" alt="gofig mascot" width="200"/>
+
 Easy config parsing for server applications.
 
 ## Features
