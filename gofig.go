@@ -15,12 +15,43 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	yaml "gopkg.in/yaml.v2"
 )
 
-// ErrorHandling defines how to handle parsing errors
+// Duration wraps time.Duration so we can augment it with encoding.TextMarshaler and
+// flag.Value interfaces.
+type Duration time.Duration
+
+// UnmarshalText unmarshals a byte slice into a Duration value.
+func (d *Duration) UnmarshalText(text []byte) error {
+	duration, err := time.ParseDuration(string(text))
+	*d = Duration(duration)
+	return err
+}
+
+// String returns a Duration as a string.
+func (d *Duration) String() string {
+	if d != nil {
+		duration := time.Duration(*d)
+		return duration.String()
+	}
+	return ""
+}
+
+// Set parses the provided string into a Duration.
+func (d *Duration) Set(s string) error {
+	if duration, err := time.ParseDuration(s); err != nil {
+		return err
+	} else {
+		*d = Duration(duration)
+	}
+	return nil
+}
+
+// ErrHandling defines how to handle parsing errors
 type ErrHandling int
 
 const (
@@ -48,6 +79,7 @@ func init() {
 	gf = New(ExitOnError)
 }
 
+// Gofig is the main gofig structure
 type Gofig struct {
 	envPrefix   string
 	cfgFlagName string
@@ -203,7 +235,13 @@ func (gf *Gofig) flagBuilder(path []string, val *reflect.Value, tags *reflect.St
 	case reflect.Int:
 		gf.flagSet.IntVar(pv.(*int), key, v.(int), desc)
 	case reflect.Int64:
-		gf.flagSet.Int64Var(pv.(*int64), key, v.(int64), desc)
+		durationPtr, ok := pv.(*Duration)
+		if ok {
+			// gf.flagSet.DurationVar(&duration, key, duration, desc)
+			gf.flagSet.Var(durationPtr, key, desc)
+		} else {
+			gf.flagSet.Int64Var(pv.(*int64), key, v.(int64), desc)
+		}
 	case reflect.Uint:
 		gf.flagSet.UintVar(pv.(*uint), key, v.(uint), desc)
 	case reflect.Uint64:
@@ -239,11 +277,19 @@ func (gf *Gofig) envDecoder(path []string, f *reflect.Value, tags *reflect.Struc
 		}
 		f.SetBool(b)
 	case reflect.Int, reflect.Int64:
-		n, err := strconv.ParseInt(val, 10, 64)
-		if err != nil || f.OverflowInt(n) {
-			return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+		if f.Type() == reflect.TypeOf(Duration(0)) {
+			d, err := time.ParseDuration(val)
+			if err != nil {
+				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Type())
+			}
+			f.SetInt(d.Nanoseconds())
+		} else {
+			n, err := strconv.ParseInt(val, 10, 64)
+			if err != nil || f.OverflowInt(n) {
+				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+			}
+			f.SetInt(n)
 		}
-		f.SetInt(n)
 	case reflect.Uint, reflect.Uint64:
 		n, err := strconv.ParseUint(val, 10, 64)
 		if err != nil || f.OverflowUint(n) {
