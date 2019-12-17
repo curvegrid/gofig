@@ -43,11 +43,13 @@ func (d *Duration) String() string {
 
 // Set parses the provided string into a Duration.
 func (d *Duration) Set(s string) error {
-	if duration, err := time.ParseDuration(s); err != nil {
+	duration, err := time.ParseDuration(s)
+	if err != nil {
 		return err
-	} else {
-		*d = Duration(duration)
 	}
+
+	*d = Duration(duration)
+
 	return nil
 }
 
@@ -100,6 +102,8 @@ func New(errHandling ErrHandling) *Gofig {
 func SetConfigFileFlag(name string, desc string) {
 	gf.SetConfigFileFlag(name, desc)
 }
+
+// SetConfigFileFlag adds a config file flag
 func (gf *Gofig) SetConfigFileFlag(name string, desc string) {
 	gf.cfgFlagName = name
 	gf.flagSet.String(gf.cfgFlagName, "", desc)
@@ -109,6 +113,10 @@ func (gf *Gofig) SetConfigFileFlag(name string, desc string) {
 // Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
 // are tried in order they are added and the search stop at the first existing file.
 func AddConfigFile(path ...string) { gf.AddConfigFile(path...) }
+
+// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENTION) to try to load a startup.
+// Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
+// are tried in order they are added and the search stop at the first existing file.
 func (gf *Gofig) AddConfigFile(path ...string) {
 	gf.cfgFiles = append(gf.cfgFiles, path...)
 }
@@ -116,6 +124,9 @@ func (gf *Gofig) AddConfigFile(path ...string) {
 // SetEnvPrefix defines a prefix that ENVIRONMENT variables will use.
 // If the prefix is "xyz", environment variables must start with "XYZ_".
 func SetEnvPrefix(prefix string) { gf.SetEnvPrefix(prefix) }
+
+// SetEnvPrefix defines a prefix that ENVIRONMENT variables will use.
+// If the prefix is "xyz", environment variables must start with "XYZ_".
 func (gf *Gofig) SetEnvPrefix(prefix string) {
 	gf.envPrefix = prefix
 }
@@ -123,6 +134,9 @@ func (gf *Gofig) SetEnvPrefix(prefix string) {
 // Parse parses the struct to build the flags, parse/decode the optional config file,
 // decode the environment variables and finally parse the arguments.
 func Parse(v interface{}) { _ = gf.Parse(v) }
+
+// Parse parses the struct to build the flags, parse/decode the optional config file,
+// decode the environment variables and finally parse the arguments.
 func (gf *Gofig) Parse(v interface{}) error {
 	return gf.ParseWithArgs(v, os.Args[1:])
 }
