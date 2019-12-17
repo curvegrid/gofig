@@ -237,7 +237,6 @@ func (gf *Gofig) flagBuilder(path []string, val *reflect.Value, tags *reflect.St
 	case reflect.Int64:
 		durationPtr, ok := pv.(*Duration)
 		if ok {
-			// gf.flagSet.DurationVar(&duration, key, duration, desc)
 			gf.flagSet.Var(durationPtr, key, desc)
 		} else {
 			gf.flagSet.Int64Var(pv.(*int64), key, v.(int64), desc)
