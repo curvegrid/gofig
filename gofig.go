@@ -15,12 +15,45 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	yaml "gopkg.in/yaml.v2"
 )
 
-// ErrorHandling defines how to handle parsing errors
+// Duration wraps time.Duration so we can augment it with encoding.TextMarshaler and
+// flag.Value interfaces.
+type Duration time.Duration
+
+// UnmarshalText unmarshals a byte slice into a Duration value.
+func (d *Duration) UnmarshalText(text []byte) error {
+	duration, err := time.ParseDuration(string(text))
+	*d = Duration(duration)
+	return err
+}
+
+// String returns a Duration as a string.
+func (d *Duration) String() string {
+	if d != nil {
+		duration := time.Duration(*d)
+		return duration.String()
+	}
+	return ""
+}
+
+// Set parses the provided string into a Duration.
+func (d *Duration) Set(s string) error {
+	duration, err := time.ParseDuration(s)
+	if err != nil {
+		return err
+	}
+
+	*d = Duration(duration)
+
+	return nil
+}
+
+// ErrHandling defines how to handle parsing errors
 type ErrHandling int
 
 const (
@@ -48,6 +81,7 @@ func init() {
 	gf = New(ExitOnError)
 }
 
+// Gofig is the main gofig structure
 type Gofig struct {
 	envPrefix   string
 	cfgFlagName string
@@ -68,6 +102,8 @@ func New(errHandling ErrHandling) *Gofig {
 func SetConfigFileFlag(name string, desc string) {
 	gf.SetConfigFileFlag(name, desc)
 }
+
+// SetConfigFileFlag adds a config file flag
 func (gf *Gofig) SetConfigFileFlag(name string, desc string) {
 	gf.cfgFlagName = name
 	gf.flagSet.String(gf.cfgFlagName, "", desc)
@@ -77,6 +113,10 @@ func (gf *Gofig) SetConfigFileFlag(name string, desc string) {
 // Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
 // are tried in order they are added and the search stop at the first existing file.
 func AddConfigFile(path ...string) { gf.AddConfigFile(path...) }
+
+// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENTION) to try to load a startup.
+// Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
+// are tried in order they are added and the search stop at the first existing file.
 func (gf *Gofig) AddConfigFile(path ...string) {
 	gf.cfgFiles = append(gf.cfgFiles, path...)
 }
@@ -84,6 +124,9 @@ func (gf *Gofig) AddConfigFile(path ...string) {
 // SetEnvPrefix defines a prefix that ENVIRONMENT variables will use.
 // If the prefix is "xyz", environment variables must start with "XYZ_".
 func SetEnvPrefix(prefix string) { gf.SetEnvPrefix(prefix) }
+
+// SetEnvPrefix defines a prefix that ENVIRONMENT variables will use.
+// If the prefix is "xyz", environment variables must start with "XYZ_".
 func (gf *Gofig) SetEnvPrefix(prefix string) {
 	gf.envPrefix = prefix
 }
@@ -91,6 +134,9 @@ func (gf *Gofig) SetEnvPrefix(prefix string) {
 // Parse parses the struct to build the flags, parse/decode the optional config file,
 // decode the environment variables and finally parse the arguments.
 func Parse(v interface{}) { _ = gf.Parse(v) }
+
+// Parse parses the struct to build the flags, parse/decode the optional config file,
+// decode the environment variables and finally parse the arguments.
 func (gf *Gofig) Parse(v interface{}) error {
 	return gf.ParseWithArgs(v, os.Args[1:])
 }
@@ -203,7 +249,12 @@ func (gf *Gofig) flagBuilder(path []string, val *reflect.Value, tags *reflect.St
 	case reflect.Int:
 		gf.flagSet.IntVar(pv.(*int), key, v.(int), desc)
 	case reflect.Int64:
-		gf.flagSet.Int64Var(pv.(*int64), key, v.(int64), desc)
+		durationPtr, ok := pv.(*Duration)
+		if ok {
+			gf.flagSet.Var(durationPtr, key, desc)
+		} else {
+			gf.flagSet.Int64Var(pv.(*int64), key, v.(int64), desc)
+		}
 	case reflect.Uint:
 		gf.flagSet.UintVar(pv.(*uint), key, v.(uint), desc)
 	case reflect.Uint64:
@@ -239,11 +290,19 @@ func (gf *Gofig) envDecoder(path []string, f *reflect.Value, tags *reflect.Struc
 		}
 		f.SetBool(b)
 	case reflect.Int, reflect.Int64:
-		n, err := strconv.ParseInt(val, 10, 64)
-		if err != nil || f.OverflowInt(n) {
-			return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+		if f.Type() == reflect.TypeOf(Duration(0)) {
+			d, err := time.ParseDuration(val)
+			if err != nil {
+				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Type())
+			}
+			f.SetInt(d.Nanoseconds())
+		} else {
+			n, err := strconv.ParseInt(val, 10, 64)
+			if err != nil || f.OverflowInt(n) {
+				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+			}
+			f.SetInt(n)
 		}
-		f.SetInt(n)
 	case reflect.Uint, reflect.Uint64:
 		n, err := strconv.ParseUint(val, 10, 64)
 		if err != nil || f.OverflowUint(n) {

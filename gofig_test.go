@@ -9,20 +9,22 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 type TestStruct struct {
-	Str     string
-	Bool    bool
-	Int     int
-	Int64   int64
-	Uint    uint
-	Uint64  uint64
-	Float   float64
-	Sub     SubTestStruct
-	Skipped string `json:"-" toml:"-" yaml:"-" env:"-" flag:"-"`
+	Str      string
+	Bool     bool
+	Int      int
+	Int64    int64
+	Uint     uint
+	Uint64   uint64
+	Float    float64
+	Duration Duration
+	Sub      SubTestStruct
+	Skipped  string `json:"-" toml:"-" yaml:"-" env:"-" flag:"-"`
 }
 
 type SubTestStruct struct {
@@ -114,13 +116,14 @@ func TestParse(t *testing.T) {
 
 func buildTestStruct() *TestStruct {
 	return &TestStruct{
-		Str:    "user-defined",
-		Bool:   false,
-		Int:    -99,
-		Int64:  -99,
-		Uint:   99,
-		Uint64: 99,
-		Float:  1.99,
+		Str:      "user-defined",
+		Bool:     false,
+		Int:      -99,
+		Int64:    -99,
+		Uint:     99,
+		Uint64:   99,
+		Float:    1.99,
+		Duration: Duration(time.Duration(99) * time.Second),
 		Sub: SubTestStruct{
 			RenamedStr: "renamed-user-defined",
 		},
@@ -151,13 +154,14 @@ func testParseConfig(cfgFile string) func(t *testing.T) {
 		s := buildTestStruct()
 
 		expected := &TestStruct{
-			Str:    "config-file",
-			Bool:   true,
-			Int:    -1,
-			Int64:  -1,
-			Uint:   1,
-			Uint64: 1,
-			Float:  1.1,
+			Str:      "config-file",
+			Bool:     true,
+			Int:      -1,
+			Int64:    -1,
+			Uint:     1,
+			Uint64:   1,
+			Float:    1.1,
+			Duration: Duration(time.Duration(1) * time.Second),
 			Sub: SubTestStruct{
 				RenamedStr: "renamed-config-file",
 			},
@@ -178,13 +182,14 @@ func testParseConfigEnv(cfgFile string) func(t *testing.T) {
 		s := buildTestStruct()
 
 		expected := &TestStruct{
-			Str:    "env",
-			Bool:   false,
-			Int:    -2,
-			Int64:  -2,
-			Uint:   2,
-			Uint64: 2,
-			Float:  2.2,
+			Str:      "env",
+			Bool:     false,
+			Int:      -2,
+			Int64:    -2,
+			Uint:     2,
+			Uint64:   2,
+			Float:    2.2,
+			Duration: Duration(time.Duration(2) * time.Second),
 			Sub: SubTestStruct{
 				RenamedStr: "renamed-env",
 			},
@@ -197,6 +202,7 @@ func testParseConfigEnv(cfgFile string) func(t *testing.T) {
 		os.Setenv("GF_UINT", fmt.Sprintf("%v", expected.Uint))
 		os.Setenv("GF_UINT64", fmt.Sprintf("%v", expected.Uint64))
 		os.Setenv("GF_FLOAT", fmt.Sprintf("%v", expected.Float))
+		os.Setenv("GF_DURATION", fmt.Sprintf("%v", expected.Duration.String()))
 		os.Setenv("GF_SKIPPED", "env")
 		os.Setenv("GF_SUB_STR", expected.Sub.RenamedStr)
 
@@ -216,11 +222,12 @@ func testParseConfigEnvFlag(cfgFile string) func(t *testing.T) {
 		s := buildTestStruct()
 
 		expected := &TestStruct{
-			Str:   "flag",
-			Bool:  true,
-			Int:   -3,
-			Uint:  3,
-			Float: 3.3,
+			Str:      "flag",
+			Bool:     true,
+			Int:      -3,
+			Uint:     3,
+			Float:    3.3,
+			Duration: Duration(time.Duration(3) * time.Second),
 			Sub: SubTestStruct{
 				RenamedStr: "renamed-flag",
 			},
@@ -233,6 +240,7 @@ func testParseConfigEnvFlag(cfgFile string) func(t *testing.T) {
 		os.Setenv("GF_UINT", fmt.Sprintf("%v", "2"))
 		os.Setenv("GF_UINT64", fmt.Sprintf("%v", "2"))
 		os.Setenv("GF_FLOAT", fmt.Sprintf("%v", "2.2"))
+		os.Setenv("GF_DURATION", fmt.Sprintf("%v", "2s"))
 		os.Setenv("GF_SKIPPED", "env")
 		os.Setenv("GF_SUB_STR", "env")
 
@@ -245,6 +253,7 @@ func testParseConfigEnvFlag(cfgFile string) func(t *testing.T) {
 			"-uint", fmt.Sprintf("%v", expected.Uint),
 			"-uint64", fmt.Sprintf("%v", expected.Uint64),
 			"-float", fmt.Sprintf("%v", expected.Float),
+			"-duration", fmt.Sprintf("%v", expected.Duration.String()),
 			"-sub-str", expected.Sub.RenamedStr,
 		}
 
