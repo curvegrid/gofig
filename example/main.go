@@ -18,9 +18,7 @@ type Config struct {
 func main() {
 	cfg := Config{}
 	cfg.Port = 5243 // user-defined default value
-
-	timeout, _ := time.ParseDuration("30s")
-	cfg.Timeout = gofig.Duration(timeout)  // gofig.Duration is time.Duration with added interfaces
+	cfg.Timeout = gofig.Duration(30 * time.Second)
 
 	gofig.SetEnvPrefix("GF")
 	gofig.SetConfigFileFlag("c", "config file")
