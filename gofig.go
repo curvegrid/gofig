@@ -273,6 +273,10 @@ func (gf *Gofig) getEnvKey(path []string) string {
 	return strings.ToUpper(strings.Join(path, envSeparator))
 }
 
+func formatEnvError(key, val string, typeOrKind interface{}) error {
+	return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, typeOrKind)
+}
+
 func (gf *Gofig) envDecoder(path []string, f *reflect.Value, tags *reflect.StructTag) error {
 	key := gf.getEnvKey(path)
 	val, ok := os.LookupEnv(key)
@@ -293,26 +297,26 @@ func (gf *Gofig) envDecoder(path []string, f *reflect.Value, tags *reflect.Struc
 		if f.Type() == reflect.TypeOf(Duration(0)) {
 			d, err := time.ParseDuration(val)
 			if err != nil {
-				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Type())
+				return formatEnvError(key, val, f.Type())
 			}
 			f.SetInt(d.Nanoseconds())
 		} else {
 			n, err := strconv.ParseInt(val, 10, 64)
 			if err != nil || f.OverflowInt(n) {
-				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+				return formatEnvError(key, val, f.Kind())
 			}
 			f.SetInt(n)
 		}
 	case reflect.Uint, reflect.Uint64:
 		n, err := strconv.ParseUint(val, 10, 64)
 		if err != nil || f.OverflowUint(n) {
-			return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+			return formatEnvError(key, val, f.Kind())
 		}
 		f.SetUint(n)
 	case reflect.Float64:
 		n, err := strconv.ParseFloat(val, f.Type().Bits())
 		if err != nil || f.OverflowFloat(n) {
-			return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+			return formatEnvError(key, val, f.Kind())
 		}
 		f.SetFloat(n)
 	}
