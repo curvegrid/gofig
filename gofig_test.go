@@ -441,23 +441,21 @@ type IntStruct struct {
 }
 
 func TestParseStruct(t *testing.T) {
-	const errMsgInvalidInterface = "invalid interface value, it must be a non-nil pointer to struct"
-
 	gf := New(ContinueOnError)
 
 	// Case: nil v
 	err := parseStruct(nil, gf.flagBuilder, "flag")
-	assert.EqualError(t, err, errMsgInvalidInterface)
+	assert.EqualError(t, err, errInvalidValue.Error())
 
 	// Case: non-pointer v
 	var nonPtr int
 	err = parseStruct(nonPtr, gf.flagBuilder, "flag")
-	assert.EqualError(t, err, errMsgInvalidInterface)
+	assert.EqualError(t, err, errInvalidValue.Error())
 
 	// Case: non-pointer v
 	var nonStruct int = 42
 	err = parseStruct(&nonStruct, gf.flagBuilder, "flag")
-	assert.EqualError(t, err, errMsgInvalidInterface)
+	assert.EqualError(t, err, errInvalidValue.Error())
 
 	// Case: embedded struct
 	embeddedStruct := &IntStruct{
