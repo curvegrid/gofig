@@ -452,7 +452,7 @@ func TestParseStruct(t *testing.T) {
 	err = parseStruct(nonPtr, gf.flagBuilder, "flag")
 	assert.EqualError(t, err, errInvalidValue.Error())
 
-	// Case: non-pointer v
+	// Case: non-struct v
 	var nonStruct int = 42
 	err = parseStruct(&nonStruct, gf.flagBuilder, "flag")
 	assert.EqualError(t, err, errInvalidValue.Error())
