@@ -68,12 +68,12 @@ const (
 const (
 	flagSeparator = "-"
 	envSeparator  = "_"
-	jsonExtention = ".json"
-	tomlExtention = ".toml"
-	yamlExtention = ".yaml"
+	jsonExtension = ".json"
+	tomlExtension = ".toml"
+	yamlExtension = ".yaml"
 )
 
-var cfgFileExt = []string{jsonExtention, tomlExtention, yamlExtention}
+var cfgFileExt = []string{jsonExtension, tomlExtension, yamlExtension}
 
 var gf *Gofig
 
@@ -109,12 +109,12 @@ func (gf *Gofig) SetConfigFileFlag(name string, desc string) {
 	gf.flagSet.String(gf.cfgFlagName, "", desc)
 }
 
-// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENTION) to try to load a startup.
+// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENSION) to try to load a startup.
 // Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
 // are tried in order they are added and the search stop at the first existing file.
 func AddConfigFile(path ...string) { gf.AddConfigFile(path...) }
 
-// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENTION) to try to load a startup.
+// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENSION) to try to load a startup.
 // Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
 // are tried in order they are added and the search stop at the first existing file.
 func (gf *Gofig) AddConfigFile(path ...string) {
@@ -363,12 +363,12 @@ func (gf *Gofig) parseConfigFile(v interface{}, args []string) error {
 
 func (gf *Gofig) decodeConfigFile(f *os.File, v interface{}) error {
 	switch filepath.Ext(f.Name()) {
-	case jsonExtention:
+	case jsonExtension:
 		return json.NewDecoder(f).Decode(v)
-	case tomlExtention:
+	case tomlExtension:
 		_, err := toml.DecodeReader(f, v)
 		return err
-	case yamlExtention:
+	case yamlExtension:
 		return yaml.NewDecoder(f).Decode(v)
 	}
 	return fmt.Errorf("config file type not supported")
