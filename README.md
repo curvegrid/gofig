@@ -26,6 +26,7 @@ Types supported for flags and environment variables:
 |gofig.Duration|✔|✔|
 
 > *Other types except for the list above such as `float32` are not supported.*
+
 > *For the usage of `gofig.Duration`, please refer to [ParseDuration](https://golang.org/pkg/time/#ParseDuration)*
 
 ## Order of priority
