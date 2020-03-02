@@ -16,14 +16,14 @@ Types supported for flags and environment variables:
 
 |type|env|flag|
 |-|-|-|
-|string|X|X|
-|bool|X|X|
-|int|X|X|
-|int64|X|X|
-|uint|X|X|
-|uint64|X|X|
-|float64|X|X|
-|gofig.Duration|X|X|
+|string|✔|✔|
+|bool|✔|✔|
+|int|✔|✔|
+|int64|✔|✔|
+|uint|✔|✔|
+|uint64|✔|✔|
+|float64|✔|✔|
+|gofig.Duration|✔|✔|
 
 ## Order of priority
 
