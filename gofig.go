@@ -68,12 +68,12 @@ const (
 const (
 	flagSeparator = "-"
 	envSeparator  = "_"
-	jsonExtention = ".json"
-	tomlExtention = ".toml"
-	yamlExtention = ".yaml"
+	jsonExtension = ".json"
+	tomlExtension = ".toml"
+	yamlExtension = ".yaml"
 )
 
-var cfgFileExt = []string{jsonExtention, tomlExtention, yamlExtention}
+var cfgFileExt = []string{jsonExtension, tomlExtension, yamlExtension}
 
 var gf *Gofig
 
@@ -109,12 +109,12 @@ func (gf *Gofig) SetConfigFileFlag(name string, desc string) {
 	gf.flagSet.String(gf.cfgFlagName, "", desc)
 }
 
-// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENTION) to try to load a startup.
+// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENSION) to try to load a startup.
 // Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
 // are tried in order they are added and the search stop at the first existing file.
 func AddConfigFile(path ...string) { gf.AddConfigFile(path...) }
 
-// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENTION) to try to load a startup.
+// AddConfigFile adds one or more config file(s) (WITHOUT THE FILE EXTENSION) to try to load a startup.
 // Supports JSON (.json), TOML (.toml) and YAML (.yaml) configuration files. Config files
 // are tried in order they are added and the search stop at the first existing file.
 func (gf *Gofig) AddConfigFile(path ...string) {
@@ -273,6 +273,10 @@ func (gf *Gofig) getEnvKey(path []string) string {
 	return strings.ToUpper(strings.Join(path, envSeparator))
 }
 
+func formatEnvError(key, val string, typeOrKind interface{}) error {
+	return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, typeOrKind)
+}
+
 func (gf *Gofig) envDecoder(path []string, f *reflect.Value, tags *reflect.StructTag) error {
 	key := gf.getEnvKey(path)
 	val, ok := os.LookupEnv(key)
@@ -293,26 +297,26 @@ func (gf *Gofig) envDecoder(path []string, f *reflect.Value, tags *reflect.Struc
 		if f.Type() == reflect.TypeOf(Duration(0)) {
 			d, err := time.ParseDuration(val)
 			if err != nil {
-				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Type())
+				return formatEnvError(key, val, f.Type())
 			}
 			f.SetInt(d.Nanoseconds())
 		} else {
 			n, err := strconv.ParseInt(val, 10, 64)
 			if err != nil || f.OverflowInt(n) {
-				return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+				return formatEnvError(key, val, f.Kind())
 			}
 			f.SetInt(n)
 		}
 	case reflect.Uint, reflect.Uint64:
 		n, err := strconv.ParseUint(val, 10, 64)
 		if err != nil || f.OverflowUint(n) {
-			return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+			return formatEnvError(key, val, f.Kind())
 		}
 		f.SetUint(n)
 	case reflect.Float64:
 		n, err := strconv.ParseFloat(val, f.Type().Bits())
 		if err != nil || f.OverflowFloat(n) {
-			return fmt.Errorf("error parsing environment variable '%v' with value '%v' into %v", key, val, f.Kind())
+			return formatEnvError(key, val, f.Kind())
 		}
 		f.SetFloat(n)
 	}
@@ -363,12 +367,12 @@ func (gf *Gofig) parseConfigFile(v interface{}, args []string) error {
 
 func (gf *Gofig) decodeConfigFile(f *os.File, v interface{}) error {
 	switch filepath.Ext(f.Name()) {
-	case jsonExtention:
+	case jsonExtension:
 		return json.NewDecoder(f).Decode(v)
-	case tomlExtention:
+	case tomlExtension:
 		_, err := toml.DecodeReader(f, v)
 		return err
-	case yamlExtention:
+	case yamlExtension:
 		return yaml.NewDecoder(f).Decode(v)
 	}
 	return fmt.Errorf("config file type not supported")
