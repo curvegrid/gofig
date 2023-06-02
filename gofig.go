@@ -10,6 +10,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -350,7 +351,7 @@ func (gf *Gofig) parseConfigFile(v interface{}, args []string) error {
 			var err error
 			f, err = os.Open(cfgFile + ext)
 			if err != nil {
-				if os.IsNotExist(err) {
+				if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrPermission) {
 					continue
 				}
 				return err
